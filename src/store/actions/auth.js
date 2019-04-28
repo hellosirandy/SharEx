@@ -51,7 +51,7 @@ export const checkAuthenticated = () => {
   return async (dispatch, getState) => {
     try {
       const { token, email } = await checkAuthenticatedAPI();
-      console.log(token);
+      // console.log(token);
       // const { auth: { token: oldToken } } = getState();
       // if (token !== oldToken) {
       //   console.log(token);

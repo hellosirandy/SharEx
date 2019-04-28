@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { compose } from 'recompose';
 import DatePicker from 'react-native-datepicker';
 import theme from '../../theme';
@@ -7,7 +8,7 @@ import theme from '../../theme';
 const DefaultDatePicker = ({ onChange, value }) => {
   return (
     <DatePicker
-      style={{ height: null }}
+      style={{ height: null, width: 150 }}
       date={value}
       mode="date"
       placeholder="select date"
@@ -21,11 +22,11 @@ const DefaultDatePicker = ({ onChange, value }) => {
         },
         dateInput: {
           borderWidth: 0,
-          alignItems: 'flex-end',
+          alignItems: 'flex-start',
           height: null,
         },
         dateText: {
-          textAlign: 'right',
+          // textAlign: 'left',
           fontSize: 17,
         },
         btnTextConfirm: {
@@ -39,7 +40,14 @@ const DefaultDatePicker = ({ onChange, value }) => {
   );
 };
 
+DefaultDatePicker.defaultProps = {
+  onChange: null,
+  value: '',
+};
+
 DefaultDatePicker.propTypes = {
+  onChange: PropTypes.func,
+  value: PropTypes.string,
 };
 
 export default compose()(DefaultDatePicker);
