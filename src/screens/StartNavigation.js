@@ -76,7 +76,7 @@ const DeptStack = createStackNavigator({
           buttonStyle={{ padding: 0 }}
           titleStyle={{ color: theme.palette.primary }}
           onPress={() => (
-            navigation.navigate('NewExpenseScreen', { expense: navigation.getParam('expense') })
+            navigation.navigate('NewExpenseScreen', { expense: navigation.getParam('expense'), index: navigation.getParam('index') })
           )}
         />
       ),

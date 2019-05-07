@@ -1,7 +1,9 @@
-import { EXPENSE_SET_EXPENSE, EXPENSE_APPEND_EXPENSE } from '../actionTypes';
+import { EXPENSE_SET_EXPENSE, EXPENSE_APPEND_EXPENSE, EXPENSE_UPDATE_EXPENSE } from '../actionTypes';
 
 const initialState = {
   expenses: [],
+  expenseIds: [],
+  expenseHash: {},
   total: 0,
 };
 
@@ -16,7 +18,13 @@ const reducer = (state = initialState, action) => {
     case EXPENSE_APPEND_EXPENSE:
       return {
         ...state,
-        expenses: [...state.expenses, action.expense],
+        expenses: [action.expense, ...state.expenses],
+      };
+    case EXPENSE_UPDATE_EXPENSE:
+      return {
+        ...state,
+        expenses: [...action.expenses],
+        total: action.total,
       };
     default:
       return state;

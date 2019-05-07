@@ -2,9 +2,9 @@ import { createExpenseAPI, getExpenseAPI, updateExpenseAPI, deleteExpenseAPI } f
 import { checkAuthenticated } from './auth';
 import { uiStartLoading, uiStopLoading } from './ui';
 import { EXPENSE_CREATING, EXPENSE_GETTING } from '../loadingTypes';
-import { EXPENSE_SET_EXPENSE, EXPENSE_APPEND_EXPENSE } from '../actionTypes';
+import { EXPENSE_SET_EXPENSE, EXPENSE_APPEND_EXPENSE, EXPENSE_UPDATE_EXPENSE } from '../actionTypes';
 
-export const createExpense = (title, total, paid, shouldPay, date, expenseId = null) => {
+export const createExpense = (title, total, paid, shouldPay, date, expenseId = null, index = null) => {
   return async (dispatch, getState) => {
     dispatch(uiStartLoading(EXPENSE_CREATING));
     const { couple } = getState().couple;
@@ -28,7 +28,14 @@ export const createExpense = (title, total, paid, shouldPay, date, expenseId = n
     try {
       if (expenseId) {
         body.expenseId = expenseId;
-        await updateExpenseAPI(token, body);
+        const updatedExpense = await updateExpenseAPI(token, body);
+        const { expenses } = getState().expense;
+        expenses[index] = updatedExpense;
+        let expensesTotal = 0;
+        expenses.forEach((expense) => {
+          expensesTotal += expense.paid - expense.shouldPay;
+        });
+        dispatch(updateExpense(expenses, expensesTotal));
       } else {
         const newExpense = await createExpenseAPI(token, body);
         dispatch(appendExpense(newExpense));
@@ -41,13 +48,20 @@ export const createExpense = (title, total, paid, shouldPay, date, expenseId = n
   };
 };
 
-export const deleteExpense = (expenseId) => {
-  return async (dispatch) => {
+export const deleteExpense = (expenseId, index) => {
+  return async (dispatch, getState) => {
     const token = await dispatch(checkAuthenticated());
     dispatch(uiStartLoading(EXPENSE_CREATING));
     try {
       await deleteExpenseAPI(token, expenseId);
       dispatch(uiStopLoading(EXPENSE_CREATING));
+      const { expenses } = getState().expense;
+      delete expenses[index];
+      let expensesTotal = 0;
+      expenses.forEach((expense) => {
+        expensesTotal += expense.paid - expense.shouldPay;
+      });
+      dispatch(updateExpense(expenses, expensesTotal));
     } catch (e) {
       console.log(e);
       dispatch(uiStopLoading(EXPENSE_CREATING));
@@ -88,3 +102,12 @@ const appendExpense = (expense) => {
     expense,
   };
 };
+
+const updateExpense = (expenses, total) => {
+  return {
+    type: EXPENSE_UPDATE_EXPENSE,
+    expenses,
+    total,
+  };
+}
+;

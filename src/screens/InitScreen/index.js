@@ -35,7 +35,7 @@ InitScreen.propTypes = {
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    onCheckAuthenticated: () => dispatch(checkAuthenticated()),
+    onCheckAuthenticated: () => dispatch(checkAuthenticated(true)),
     onGetCouple: () => dispatch(getCouple()),
   };
 };

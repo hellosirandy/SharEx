@@ -2,9 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { compose } from 'recompose';
 import { connect } from 'react-redux';
-import { View, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback, SafeAreaView } from 'react-native';
-import { ListItem, Input, Button } from 'react-native-elements';
-import { getStatusBarHeight } from 'react-native-status-bar-height';
+import { View, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback, Alert, ActivityIndicator, DeviceEventEmitter } from 'react-native';
+import { ListItem, Input, Button, Overlay } from 'react-native-elements';
 import { Header } from 'react-navigation';
 import moment from 'moment';
 import styles from './styles';
@@ -21,7 +20,7 @@ const TextInput = ({
     <View style={{ width: 150 }}>
       <Input
         placeholder={placeholder}
-        inputContainerStyle={{ borderBottomWidth: 0 }}
+        inputContainerStyle={{ borderBottomWidth: 0, width: '100%' }}
         containerStyle={{ paddingHorizontal: 0 }}
         inputStyle={{ minHeight: 0, fontSize: 17 }}
         onChangeText={onChange}
@@ -90,13 +89,13 @@ class NewExpenseScreen extends React.PureComponent {
         },
         date: {
           value: moment(date).format('L'),
-          // value: date ? moment(date).format('L') : moment().format('L'),
           valid: Boolean(date),
           validationRules: [],
         },
       },
       submitted: false,
       focusing: '',
+      editMode: Boolean(expense),
     };
   }
   handleTouchablePress = () => {
@@ -126,6 +125,7 @@ class NewExpenseScreen extends React.PureComponent {
         },
       } = this.state;
       const expense = this.props.navigation.getParam('expense');
+      const index = this.props.navigation.getParam('index');
       const expenseId = expense ? expense.id : null;
       await this.props.onCreateExpense(
         title.value,
@@ -134,13 +134,42 @@ class NewExpenseScreen extends React.PureComponent {
         Number(shouldPay.value),
         new Date(date.value).getTime(),
         expenseId,
+        index,
       );
-      this.props.navigation.pop();
+      // this.props.navigation.pop();
+      // DeviceEventEmitter.emit('Expense:FinishEdit', {});
+      this.dismiss();
     }
   }
-  handleDeletePress = expenseId => async () => {
-    await this.props.onDeleteExpense(expenseId);
-    this.props.navigation.pop();
+  handleDeletePress = expenseId => () => {
+    Alert.alert(
+      'Alert Title',
+      'Are you sure you want to delete this data?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: async () => {
+            const index = this.props.navigation.getParam('index');
+            await this.props.onDeleteExpense(expenseId, index);
+            this.dismiss();
+          },
+          style: 'destructive',
+        },
+      ],
+      { cancelable: false },
+    );
+  }
+  dismiss = () => {
+    if (this.state.editMode) {
+      this.props.navigation.pop();
+      DeviceEventEmitter.emit('Expense:FinishEdit', {});
+    } else {
+      this.props.navigation.pop();
+    }
   }
   handleOverlayDismiss = () => {
     this.setState({ overlay: '' });
@@ -181,6 +210,11 @@ class NewExpenseScreen extends React.PureComponent {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={Header.HEIGHT + 24} pointerEvents={isLoading ? 'none' : 'auto'}>
         <TouchableWithoutFeedback onPress={this.handleTouchablePress}>
           <View style={styles.container}>
+            {isLoading &&
+              <Overlay isVisible overlayBackgroundColor="transparent" overlayStyle={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator color="white" />
+              </Overlay>
+            }
             <View style={{ flex: 1 }}>
               <ListItem
                 title="Title"
@@ -270,9 +304,9 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    onCreateExpense: (title, total, paid, shouldPay, date, expenseId = null) =>
-      dispatch(createExpense(title, total, paid, shouldPay, date, expenseId)),
-    onDeleteExpense: expenseId => dispatch(deleteExpense(expenseId)),
+    onCreateExpense: (title, total, paid, shouldPay, date, expenseId = null, index = null) =>
+      dispatch(createExpense(title, total, paid, shouldPay, date, expenseId, index)),
+    onDeleteExpense: (expenseId, index) => dispatch(deleteExpense(expenseId, index)),
   };
 };
 

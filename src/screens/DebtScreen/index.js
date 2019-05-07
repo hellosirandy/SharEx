@@ -14,16 +14,13 @@ class DebtScreen extends React.PureComponent {
   state = {
     refreshing: false,
   }
-  componentDidMount() {
-    this.props.onGetExpense();
-  }
   handleRefresh = async () => {
     this.setState({ refreshing: true });
     await this.props.onGetExpense();
     this.setState({ refreshing: false });
   }
-  handleExpenseClick = expense => () => {
-    this.props.navigation.navigate('ExpenseScreen', { expense });
+  handleExpenseClick = (expense, index) => () => {
+    this.props.navigation.navigate('ExpenseScreen', { expense, index });
   }
   render() {
     const { expenses } = this.props;
@@ -37,7 +34,7 @@ class DebtScreen extends React.PureComponent {
               onRefresh={this.handleRefresh}
             />
           }
-          renderItem={({ item }) => {
+          renderItem={({ item, index }) => {
             const balance = item.paid - item.shouldPay;
             return (
               <ListItem
@@ -65,7 +62,7 @@ class DebtScreen extends React.PureComponent {
                     iconRight
                   />
                 )}
-                onPress={this.handleExpenseClick(item)}
+                onPress={this.handleExpenseClick(item, index)}
               />
             );
           }}

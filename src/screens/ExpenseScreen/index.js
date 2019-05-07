@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { compose } from 'recompose';
-import { View, Text } from 'react-native';
+import { View, Text, DeviceEventEmitter } from 'react-native';
 import { ListItem as RNEListItem } from 'react-native-elements';
 import styles from './styles';
 
@@ -27,10 +27,15 @@ class ExpenseScreen extends React.PureComponent {
   static navigationOptions = ({ navigation }) => ({
     title: navigation.getParam('expense').title,
   });
+  constructor(props) {
+    super(props);
+    DeviceEventEmitter.addListener('Expense:FinishEdit', () => {
+      props.navigation.pop();
+    });
+  }
   render() {
     const { navigation, partner, you } = this.props;
     const expense = navigation.getParam('expense');
-    console.log(expense);
     return (
       <View style={styles.container}>
         <ListItem

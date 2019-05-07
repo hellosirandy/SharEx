@@ -16,7 +16,8 @@ module.exports = {
     "react/forbid-prop-types": 0,
     "jsx-a11y/anchor-is-valid": 0,
     "react/no-did-update-set-state": 0,
-    "import/prefer-default-export": 0
+    "import/prefer-default-export": 0,
+    "no-case-declarations": 0
   },
   "parser": "babel-eslint",
   "globals": {
