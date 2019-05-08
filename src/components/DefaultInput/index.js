@@ -5,7 +5,7 @@ import { Input } from 'react-native-elements';
 import styles from './styles';
 
 const DefaultInput = ({
-  placeholder, password, keyboardType, onChange, value, label, errMsg,
+  placeholder, password, keyboardType, onChange, value, label, errMsg, autoFocus,
 }) => {
   return (
     <Input
@@ -18,6 +18,7 @@ const DefaultInput = ({
       value={value}
       label={label}
       errorMessage={errMsg ? `*${errMsg}` : null}
+      autoFocus={autoFocus}
     />
   );
 };
@@ -30,6 +31,7 @@ DefaultInput.defaultProps = {
   value: null,
   label: null,
   errMsg: null,
+  autoFocus: false,
 };
 
 DefaultInput.propTypes = {
@@ -40,6 +42,7 @@ DefaultInput.propTypes = {
   value: PropTypes.string,
   label: PropTypes.string,
   errMsg: PropTypes.string,
+  autoFocus: PropTypes.bool,
 };
 
 export default compose()(DefaultInput);

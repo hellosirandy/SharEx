@@ -3,6 +3,7 @@ import { AUTH_SET_AUTHENTICATED } from '../actionTypes';
 import { uiStartLoading, uiStopLoading } from './ui';
 import { AUTH_SIGNIN } from '../loadingTypes';
 import { getCouple } from './couple';
+import { getExpense } from './expense';
 
 export const signIn = (email, password) => {
   return async (dispatch) => {
@@ -47,11 +48,14 @@ export const signOut = () => {
   };
 };
 
-export const checkAuthenticated = () => {
-  return async (dispatch, getState) => {
+export const checkAuthenticated = (initialLoad = false) => {
+  return async (dispatch) => {
+    if (initialLoad) {
+      await dispatch(getExpense());
+    }
     try {
       const { token, email } = await checkAuthenticatedAPI();
-      console.log(token);
+      // console.log(token);
       // const { auth: { token: oldToken } } = getState();
       // if (token !== oldToken) {
       //   console.log(token);

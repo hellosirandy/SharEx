@@ -2,32 +2,32 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { compose } from 'recompose';
 import { connect } from 'react-redux';
-import { View, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback, SafeAreaView } from 'react-native';
-import { ListItem, Input } from 'react-native-elements';
-import { StackActions } from 'react-navigation';
+import { View, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback, Alert, ActivityIndicator, DeviceEventEmitter } from 'react-native';
+import { ListItem, Input, Button, Overlay } from 'react-native-elements';
+import { Header } from 'react-navigation';
 import moment from 'moment';
-import DefaultInput from '../../components/DefaultInput';
 import styles from './styles';
-import DefaultButton from '../../components/DefaultButton';
-import { createExpense, deleteExpense } from '../../store/actions/expense';
+import { createExpense, deleteExpense, updateExpense } from '../../store/actions/expense';
 import { EXPENSE_CREATING } from '../../store/loadingTypes';
 import DefaultDatePicker from '../../components/DefaultDatePicker';
 import { validateForm, validate } from '../../utils/validation';
 import theme from '../../theme';
 
 const TextInput = ({
-  placeholder, onChange, keyboardType, value,
+  placeholder, onChange, keyboardType, value, onFocus, onBlur,
 }) => {
   return (
     <View style={{ width: 150 }}>
       <Input
         placeholder={placeholder}
-        inputContainerStyle={{ borderBottomWidth: 0 }}
+        inputContainerStyle={{ borderBottomWidth: 0, width: '100%' }}
         containerStyle={{ paddingHorizontal: 0 }}
-        inputStyle={{ minHeight: 0, textAlign: 'right', fontSize: 17 }}
+        inputStyle={{ minHeight: 0, fontSize: 17 }}
         onChangeText={onChange}
         keyboardType={keyboardType}
         value={value}
+        onFocus={onFocus}
+        onBlur={onBlur}
       />
     </View>
   );
@@ -38,6 +38,8 @@ TextInput.defaultProps = {
   keyboardType: null,
   onChange: null,
   value: null,
+  onFocus: null,
+  onBlur: null,
 };
 
 TextInput.propTypes = {
@@ -45,6 +47,8 @@ TextInput.propTypes = {
   keyboardType: PropTypes.string,
   onChange: PropTypes.func,
   value: PropTypes.string,
+  onFocus: PropTypes.func,
+  onBlur: PropTypes.func,
 };
 
 class NewExpenseScreen extends React.PureComponent {
@@ -52,12 +56,10 @@ class NewExpenseScreen extends React.PureComponent {
     super(props);
     props.navigation.setParams({ onSubmit: this.handleSubmitPress });
     const expense = props.navigation.getParam('expense');
-    console.log(expense);
     const title = expense ? expense.title : '';
     const total = (expense ? expense.total : '').toString();
     const paid = (expense ? expense.paid : '').toString();
     const shouldPay = (expense ? expense.shouldPay : '').toString();
-    // const { date } = expense;
     const date = expense ? expense.date : new Date().getTime();
     this.state = {
       controls: {
@@ -87,12 +89,13 @@ class NewExpenseScreen extends React.PureComponent {
         },
         date: {
           value: moment(date).format('L'),
-          // value: date ? moment(date).format('L') : moment().format('L'),
           valid: Boolean(date),
           validationRules: [],
         },
       },
       submitted: false,
+      focusing: '',
+      editMode: Boolean(expense),
     };
   }
   handleTouchablePress = () => {
@@ -122,69 +125,116 @@ class NewExpenseScreen extends React.PureComponent {
         },
       } = this.state;
       const expense = this.props.navigation.getParam('expense');
-      const expenseId = expense ? expense.id : null;
-      await this.props.onCreateExpense(
-        title.value,
-        Number(total.value),
-        Number(paid.value),
-        Number(shouldPay.value),
-        new Date(date.value).getTime(),
-        expenseId,
-      );
-      this.props.navigation.pop();
-    } else {
-      console.log('hihihi');
+      if (expense) {
+        await this.props.onUpdateExpense({
+          title: title.value,
+          total: Number(total.value),
+          paid: Number(paid.value),
+          shouldPay: Number(shouldPay.value),
+          date: new Date(date.value).getTime(),
+          expenseId: expense.id,
+        });
+      } else {
+        await this.props.onCreateExpense({
+          title: title.value,
+          total: Number(total.value),
+          paid: Number(paid.value),
+          shouldPay: Number(shouldPay.value),
+          date: new Date(date.value).getTime(),
+        });
+      }
+      this.dismiss();
     }
   }
-  handleDeletePress = expenseId => async () => {
-    await this.props.onDeleteExpense(expenseId);
-    this.props.navigation.pop();
+  handleDeletePress = expenseId => () => {
+    Alert.alert(
+      'Alert Title',
+      'Are you sure you want to delete this data?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: async () => {
+            await this.props.onDeleteExpense(expenseId);
+            this.dismiss();
+          },
+          style: 'destructive',
+        },
+      ],
+      { cancelable: false },
+    );
+  }
+  dismiss = () => {
+    if (this.state.editMode) {
+      this.props.navigation.pop();
+      DeviceEventEmitter.emit('Expense:FinishEdit', {});
+    } else {
+      this.props.navigation.pop();
+    }
+  }
+  handleOverlayDismiss = () => {
+    this.setState({ overlay: '' });
+  }
+  handleSetOverlay = overlay => () => {
+    this.setState({ overlay });
+  }
+  handleInputFocus = key => () => {
+    this.setState({ focusing: key });
+  }
+  handleSplitOrTreatPress = treat => () => {
+    this.setState((prevState) => {
+      const total = prevState.controls.total.value;
+      const value = (treat ? total : total / 2).toString();
+      return {
+        ...prevState,
+        controls: {
+          ...prevState.controls,
+          shouldPay: {
+            ...prevState.controls.shouldPay,
+            value,
+            valid: validate(value, prevState.controls.shouldPay.validationRules),
+          },
+        },
+      };
+    });
   }
   render() {
     const {
       controls: {
         title, total, date, paid, shouldPay,
-      }, submitted,
+      },
+      focusing,
     } = this.state;
-    const expense = this.props.navigation.getParam('expense');
+    const { isLoading, navigation } = this.props;
+    const expense = navigation.getParam('expense');
     return (
-      <SafeAreaView style={{ flex: 1 }}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-          <TouchableWithoutFeedback onPress={this.handleTouchablePress}>
-            <View style={styles.container}>
-              {/* <React.Fragment>
-                <DefaultInput
-                  placeholder="title"
-                  label="Title"
-                  onChange={this.handleInputChange('title')}
-                  value={title.value}
-                  errMsg={(submitted && !title.valid) ? title.errMsg : null}
-                />
-                <DefaultInput
-                  placeholder="You paid..."
-                  label="Amount"
-                  keyboardType="numeric"
-                  onChange={this.handleInputChange('amount')}
-                  value={amount.value}
-                  errMsg={(submitted && !amount.valid) ? amount.errMsg : null}
-                />
-                <DefaultDatePicker onChange={this.handleInputChange('date')} value={date.value} />
-                <DefaultButton title="Submit" onPress={this.handleSubmitPress} loading={this.props.isLoading} />
-              </React.Fragment> */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={Header.HEIGHT + 24} pointerEvents={isLoading ? 'none' : 'auto'}>
+        <TouchableWithoutFeedback onPress={this.handleTouchablePress}>
+          <View style={styles.container}>
+            {isLoading &&
+              <Overlay isVisible overlayBackgroundColor="transparent" overlayStyle={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator color="white" />
+              </Overlay>
+            }
+            <View style={{ flex: 1 }}>
               <ListItem
                 title="Title"
                 bottomDivider
-                chevron={
+                rightElement={
                   <TextInput
                     placeholder="title"
                     onChange={this.handleInputChange('title')}
                     value={title.value}
                   />}
               />
+
               <ListItem
                 title="Total"
                 bottomDivider
-                chevron={
+                rightElement={
                   <TextInput
                     placeholder="total"
                     onChange={this.handleInputChange('total')}
@@ -195,7 +245,7 @@ class NewExpenseScreen extends React.PureComponent {
               <ListItem
                 title="You paid"
                 bottomDivider
-                chevron={
+                rightElement={
                   <TextInput
                     placeholder="you paid"
                     onChange={this.handleInputChange('paid')}
@@ -206,18 +256,20 @@ class NewExpenseScreen extends React.PureComponent {
               <ListItem
                 title="You should pay"
                 bottomDivider
-                chevron={
+                rightElement={
                   <TextInput
                     placeholder="you should pay"
                     onChange={this.handleInputChange('shouldPay')}
                     value={shouldPay.value}
                     keyboardType="numeric"
+                    onFocus={this.handleInputFocus('shouldPay')}
+                    onBlur={this.handleInputFocus('')}
                   />}
               />
               <ListItem
                 title="Date"
                 bottomDivider
-                chevron={<DefaultDatePicker onChange={this.handleInputChange('date')} value={date.value} />}
+                rightElement={<DefaultDatePicker onChange={this.handleInputChange('date')} value={date.value} />}
               />
               {expense && <ListItem
                 title="Delete"
@@ -227,15 +279,23 @@ class NewExpenseScreen extends React.PureComponent {
                 onPress={this.handleDeletePress(expense.id)}
               />}
             </View>
-          </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+            {focusing === 'shouldPay' &&
+              <View style={styles.footer}>
+                <Button title="split" onPress={this.handleSplitOrTreatPress(false)} containerStyle={styles.footerButton} buttonStyle={{ backgroundColor: 'transparent' }} />
+                <Button title="you treat" onPress={this.handleSplitOrTreatPress(true)} containerStyle={styles.footerButton} buttonStyle={{ backgroundColor: 'transparent' }} />
+              </View>
+            }
+
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     );
   }
 }
 
 NewExpenseScreen.propTypes = {
   onCreateExpense: PropTypes.func.isRequired,
+  onUpdateExpense: PropTypes.func.isRequired,
   isLoading: PropTypes.bool.isRequired,
   navigation: PropTypes.object.isRequired,
   onDeleteExpense: PropTypes.func.isRequired,
@@ -249,8 +309,8 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    onCreateExpense: (title, total, paid, shouldPay, date, expenseId = null) =>
-      dispatch(createExpense(title, total, paid, shouldPay, date, expenseId)),
+    onCreateExpense: options => dispatch(createExpense(options)),
+    onUpdateExpense: options => dispatch(updateExpense(options)),
     onDeleteExpense: expenseId => dispatch(deleteExpense(expenseId)),
   };
 };
