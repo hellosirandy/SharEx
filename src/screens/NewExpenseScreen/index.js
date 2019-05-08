@@ -7,7 +7,7 @@ import { ListItem, Input, Button, Overlay } from 'react-native-elements';
 import { Header } from 'react-navigation';
 import moment from 'moment';
 import styles from './styles';
-import { createExpense, deleteExpense } from '../../store/actions/expense';
+import { createExpense, deleteExpense, updateExpense } from '../../store/actions/expense';
 import { EXPENSE_CREATING } from '../../store/loadingTypes';
 import DefaultDatePicker from '../../components/DefaultDatePicker';
 import { validateForm, validate } from '../../utils/validation';
@@ -125,19 +125,24 @@ class NewExpenseScreen extends React.PureComponent {
         },
       } = this.state;
       const expense = this.props.navigation.getParam('expense');
-      const index = this.props.navigation.getParam('index');
-      const expenseId = expense ? expense.id : null;
-      await this.props.onCreateExpense(
-        title.value,
-        Number(total.value),
-        Number(paid.value),
-        Number(shouldPay.value),
-        new Date(date.value).getTime(),
-        expenseId,
-        index,
-      );
-      // this.props.navigation.pop();
-      // DeviceEventEmitter.emit('Expense:FinishEdit', {});
+      if (expense) {
+        await this.props.onUpdateExpense({
+          title: title.value,
+          total: Number(total.value),
+          paid: Number(paid.value),
+          shouldPay: Number(shouldPay.value),
+          date: new Date(date.value).getTime(),
+          expenseId: expense.id,
+        });
+      } else {
+        await this.props.onCreateExpense({
+          title: title.value,
+          total: Number(total.value),
+          paid: Number(paid.value),
+          shouldPay: Number(shouldPay.value),
+          date: new Date(date.value).getTime(),
+        });
+      }
       this.dismiss();
     }
   }
@@ -153,8 +158,7 @@ class NewExpenseScreen extends React.PureComponent {
         {
           text: 'Delete',
           onPress: async () => {
-            const index = this.props.navigation.getParam('index');
-            await this.props.onDeleteExpense(expenseId, index);
+            await this.props.onDeleteExpense(expenseId);
             this.dismiss();
           },
           style: 'destructive',
@@ -291,6 +295,7 @@ class NewExpenseScreen extends React.PureComponent {
 
 NewExpenseScreen.propTypes = {
   onCreateExpense: PropTypes.func.isRequired,
+  onUpdateExpense: PropTypes.func.isRequired,
   isLoading: PropTypes.bool.isRequired,
   navigation: PropTypes.object.isRequired,
   onDeleteExpense: PropTypes.func.isRequired,
@@ -304,9 +309,9 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    onCreateExpense: (title, total, paid, shouldPay, date, expenseId = null, index = null) =>
-      dispatch(createExpense(title, total, paid, shouldPay, date, expenseId, index)),
-    onDeleteExpense: (expenseId, index) => dispatch(deleteExpense(expenseId, index)),
+    onCreateExpense: options => dispatch(createExpense(options)),
+    onUpdateExpense: options => dispatch(updateExpense(options)),
+    onDeleteExpense: expenseId => dispatch(deleteExpense(expenseId)),
   };
 };
 
