@@ -2,14 +2,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { compose } from 'recompose';
 import { connect } from 'react-redux';
-import { View, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback, Alert, ActivityIndicator, DeviceEventEmitter } from 'react-native';
+import { View, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback, Alert, ActivityIndicator, DeviceEventEmitter, Text } from 'react-native';
 import { ListItem, Input, Button, Overlay } from 'react-native-elements';
 import { Header } from 'react-navigation';
 import moment from 'moment';
 import styles from './styles';
 import { createExpense, deleteExpense, updateExpense } from '../../store/actions/expense';
 import { EXPENSE_CREATING } from '../../store/loadingTypes';
-import DefaultDatePicker from '../../components/DefaultDatePicker';
 import { validateForm, validate } from '../../utils/validation';
 import theme from '../../theme';
 
@@ -60,6 +59,7 @@ class NewExpenseScreen extends React.PureComponent {
     const total = (expense ? expense.total : '').toString();
     const paid = (expense ? expense.paid : '').toString();
     const shouldPay = (expense ? expense.shouldPay : '').toString();
+    const category = expense ? expense.category : 'others';
     const date = expense ? expense.date : new Date().getTime();
     this.state = {
       controls: {
@@ -92,6 +92,11 @@ class NewExpenseScreen extends React.PureComponent {
           valid: Boolean(date),
           validationRules: [],
         },
+        category: {
+          value: category,
+          valid: true,
+          validationRules: [],
+        },
       },
       submitted: false,
       focusing: '',
@@ -121,7 +126,7 @@ class NewExpenseScreen extends React.PureComponent {
     if (valid) {
       const {
         controls: {
-          title, total, paid, shouldPay, date,
+          title, total, paid, shouldPay, date, category,
         },
       } = this.state;
       const expense = this.props.navigation.getParam('expense');
@@ -133,6 +138,7 @@ class NewExpenseScreen extends React.PureComponent {
           shouldPay: Number(shouldPay.value),
           date: new Date(date.value).getTime(),
           expenseId: expense.id,
+          category: category.value,
         });
       } else {
         await this.props.onCreateExpense({
@@ -141,6 +147,7 @@ class NewExpenseScreen extends React.PureComponent {
           paid: Number(paid.value),
           shouldPay: Number(shouldPay.value),
           date: new Date(date.value).getTime(),
+          category: category.value,
         });
       }
       this.dismiss();
@@ -204,7 +211,7 @@ class NewExpenseScreen extends React.PureComponent {
   render() {
     const {
       controls: {
-        title, total, date, paid, shouldPay,
+        title, total, date, paid, shouldPay, category,
       },
       focusing,
     } = this.state;
@@ -269,7 +276,18 @@ class NewExpenseScreen extends React.PureComponent {
               <ListItem
                 title="Date"
                 bottomDivider
-                rightElement={<DefaultDatePicker onChange={this.handleInputChange('date')} value={date.value} />}
+                onPress={() => {
+                  this.props.navigation.navigate('CalendarScreen', { onDayPress: this.handleInputChange('date'), value: date.value });
+                }}
+                rightElement={<Text style={{ fontSize: 17, width: 150 }}>{date.value}</Text>}
+              />
+              <ListItem
+                title="Category"
+                bottomDivider
+                onPress={() => {
+                  this.props.navigation.navigate('CategoryScreen', { onCategoryPress: this.handleInputChange('category'), value: category.value });
+                }}
+                rightElement={<Text style={{ fontSize: 17, width: 150 }}>{category.value}</Text>}
               />
               {expense && <ListItem
                 title="Delete"

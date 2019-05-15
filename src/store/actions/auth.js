@@ -10,9 +10,9 @@ export const signIn = (email, password) => {
     try {
       dispatch(uiStartLoading(AUTH_SIGNIN));
       const token = await signInAPI(email, password);
-      dispatch(uiStopLoading(AUTH_SIGNIN));
-      dispatch(getCouple());
+      await Promise.all([dispatch(getCouple()), dispatch(getExpense())])
       dispatch(setAuthenticated(token, email));
+      dispatch(uiStopLoading(AUTH_SIGNIN));
     } catch (e) {
       dispatch(uiStopLoading(AUTH_SIGNIN));
       if (e === 'NEW_PASSWORD_REQUIRED') {
@@ -48,14 +48,11 @@ export const signOut = () => {
   };
 };
 
-export const checkAuthenticated = (initialLoad = false) => {
+export const checkAuthenticated = () => {
   return async (dispatch) => {
-    if (initialLoad) {
-      await dispatch(getExpense());
-    }
     try {
       const { token, email } = await checkAuthenticatedAPI();
-      // console.log(token);
+      console.log(token);
       // const { auth: { token: oldToken } } = getState();
       // if (token !== oldToken) {
       //   console.log(token);
@@ -64,6 +61,7 @@ export const checkAuthenticated = (initialLoad = false) => {
       dispatch(setAuthenticated(token, email));
       return token;
     } catch (e) {
+      console.log(e);
       dispatch(setAuthenticated(null));
     }
   };

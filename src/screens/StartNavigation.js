@@ -6,8 +6,10 @@ import theme from '../theme';
 import AuthScreen from './AuthScreen';
 import InitScreen from './InitScreen';
 import HomeScreen from './HomeScreen';
-import DismissableStackNavigator from './DismissableNav';
+// import DismissableStackNavigator from './DismissableNav';
 import NewExpenseScreen from './NewExpenseScreen';
+import CalendarScreen from './CalendarScreen';
+import CategoryScreen from './CategoryScreen';
 import SettingScreen from './SettingScreen';
 import DebtScreen from './DebtScreen';
 import ExpenseScreen from './ExpenseScreen';
@@ -121,8 +123,31 @@ const AppStack = createBottomTabNavigator({
   },
 });
 
-const NewExpenseStack = DismissableStackNavigator({
-  NewExpenseScreen,
+const NewExpenseStack = createStackNavigator({
+  NewExpenseScreen: {
+    screen: NewExpenseScreen,
+    navigationOptions: ({ navigation }) => ({
+      headerRight: (
+        <Button
+          title="Done"
+          type="clear"
+          buttonStyle={{ padding: 0 }}
+          titleStyle={{ color: theme.palette.primary }}
+          onPress={() => (
+            navigation.getParam('onSubmit')()
+          )}
+        />
+      ),
+      headerLeftContainerStyle: {
+        paddingLeft: 10,
+      },
+      headerRightContainerStyle: {
+        paddingRight: 10,
+      },
+    }),
+  },
+  CalendarScreen,
+  CategoryScreen,
 }, {
   defaultNavigationOptions: ({ navigation }) => ({
     headerLeft: (
@@ -132,18 +157,7 @@ const NewExpenseStack = DismissableStackNavigator({
         buttonStyle={{ padding: 0 }}
         titleStyle={{ color: 'black' }}
         onPress={() => (
-        navigation.pop()
-      )}
-      />
-    ),
-    headerRight: (
-      <Button
-        title="Done"
-        type="clear"
-        buttonStyle={{ padding: 0 }}
-        titleStyle={{ color: theme.palette.primary }}
-        onPress={() => (
-          navigation.getParam('onSubmit')()
+          navigation.pop()
         )}
       />
     ),
@@ -154,6 +168,7 @@ const NewExpenseStack = DismissableStackNavigator({
       paddingRight: 10,
     },
   }),
+  mode: 'modal',
 });
 
 const ModalStack = createStackNavigator({

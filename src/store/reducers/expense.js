@@ -35,7 +35,8 @@ const reducer = (state = initialState, action) => {
         total: state.total - prevDiff + updatedDiff,
       };
     case EXPENSE_DELETE_EXPENSE:
-      const expenseIds = state.expenseIds.filter(expense => expense.id !== action.deletedExpense.id);
+      console.log(action.deletedExpense);
+      const expenseIds = state.expenseIds.filter(expenseId => expenseId !== action.deletedExpense.id);
       return {
         ...state,
         expenseIds,

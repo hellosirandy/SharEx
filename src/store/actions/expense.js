@@ -49,7 +49,7 @@ export const updateExpense = (options) => {
 
 const makeExpense = (options) => {
   const {
-    couple, paid, shouldPay, total, title, date, expenseId,
+    couple, paid, shouldPay, total, title, date, expenseId, category,
   } = options;
   const data = {
     [couple.you.email]: {
@@ -67,6 +67,7 @@ const makeExpense = (options) => {
     date,
     data,
     expenseId,
+    category,
   };
 };
 
@@ -105,7 +106,7 @@ export const getExpense = () => {
         expenseTable[expense.id] = expense;
       });
       const expenseIds = expenses.map(expense => expense.id);
-      dispatch(setExpense(expenseIds.reverse(), expenseTable, total));
+      dispatch(setExpense(expenseIds.reverse(), expenseTable, parseFloat(total.toFixed(3))));
       dispatch(uiStopLoading(EXPENSE_GETTING));
     } catch (e) {
       dispatch(uiStopLoading(EXPENSE_GETTING));

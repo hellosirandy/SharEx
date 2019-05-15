@@ -20,7 +20,7 @@ const ListItem = ({ title, amount }) => {
 
 ListItem.propTypes = {
   title: PropTypes.string.isRequired,
-  amount: PropTypes.number.isRequired,
+  amount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
 };
 
 class ExpenseScreen extends React.PureComponent {
@@ -41,6 +41,10 @@ class ExpenseScreen extends React.PureComponent {
         <ListItem
           title="Total"
           amount={expense.total}
+        />
+        <ListItem
+          title="Category"
+          amount={expense.category}
         />
         <ListItem
           title={`${you} paid`}
