@@ -29,7 +29,11 @@ export default class Api {
         Authorization: token,
       },
     });
-    return res.json();
+    const parsedRes = await res.json();
+    if (!res.ok) {
+      throw parsedRes;
+    }
+    return parsedRes;
   }
 
   put = async (endpoint: string, token: string, body: any) => {
@@ -41,7 +45,11 @@ export default class Api {
         Authorization: token,
       },
     });
-    return res.json();
+    const parsedRes = await res.json();
+    if (!res.ok) {
+      throw parsedRes;
+    }
+    return parsedRes;
   }
 
   delete = async (endpoint: string, token: string, params: any) => {

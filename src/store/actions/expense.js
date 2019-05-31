@@ -1,7 +1,7 @@
 import { createExpenseAPI, getExpenseAPI, updateExpenseAPI, deleteExpenseAPI } from '../../apis/expense';
 import { checkAuthenticated } from './auth';
 import { uiStartLoading, uiStopLoading } from './ui';
-import { EXPENSE_CREATING, EXPENSE_GETTING } from '../loadingTypes';
+import { EXPENSE_CREATING, EXPENSE_GETTING, EXPENSE_DELETING } from '../loadingTypes';
 import { EXPENSE_SET_EXPENSE, EXPENSE_APPEND_EXPENSE, EXPENSE_UPDATE_EXPENSE, EXPENSE_DELETE_EXPENSE } from '../actionTypes';
 
 export const createExpense = (options) => {
@@ -74,10 +74,10 @@ const makeExpense = (options) => {
 export const deleteExpense = (expenseId) => {
   return async (dispatch, getState) => {
     const token = await dispatch(checkAuthenticated());
-    dispatch(uiStartLoading(EXPENSE_CREATING));
+    dispatch(uiStartLoading(EXPENSE_DELETING));
     try {
       await deleteExpenseAPI(token, expenseId);
-      dispatch(uiStopLoading(EXPENSE_CREATING));
+      dispatch(uiStopLoading(EXPENSE_DELETING));
       const { expenseIds, expenseTable } = getState().expense;
       const deletedExpense = expenseTable[expenseId];
       delete expenseTable[expenseId];
@@ -88,7 +88,7 @@ export const deleteExpense = (expenseId) => {
       });
     } catch (e) {
       console.log(e);
-      dispatch(uiStopLoading(EXPENSE_CREATING));
+      dispatch(uiStopLoading(EXPENSE_DELETING));
     }
   };
 };

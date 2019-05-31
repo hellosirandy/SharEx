@@ -2,15 +2,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { compose } from 'recompose';
 import { connect } from 'react-redux';
-import { View, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback, Alert, ActivityIndicator, DeviceEventEmitter, Text } from 'react-native';
+import { View, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback, ActivityIndicator, Text } from 'react-native';
 import { ListItem, Input, Button, Overlay } from 'react-native-elements';
 import { Header } from 'react-navigation';
 import moment from 'moment';
 import styles from './styles';
-import { createExpense, deleteExpense, updateExpense } from '../../store/actions/expense';
+import { createExpense, updateExpense } from '../../store/actions/expense';
 import { EXPENSE_CREATING } from '../../store/loadingTypes';
 import { validateForm, validate } from '../../utils/validation';
-import theme from '../../theme';
 
 const TextInput = ({
   placeholder, onChange, keyboardType, value, onFocus, onBlur,
@@ -153,31 +152,9 @@ class NewExpenseScreen extends React.PureComponent {
       this.dismiss();
     }
   }
-  handleDeletePress = expenseId => () => {
-    Alert.alert(
-      'Alert Title',
-      'Are you sure you want to delete this data?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          onPress: async () => {
-            await this.props.onDeleteExpense(expenseId);
-            this.dismiss();
-          },
-          style: 'destructive',
-        },
-      ],
-      { cancelable: false },
-    );
-  }
   dismiss = () => {
     if (this.state.editMode) {
       this.props.navigation.pop();
-      DeviceEventEmitter.emit('Expense:FinishEdit', {});
     } else {
       this.props.navigation.pop();
     }
@@ -215,8 +192,7 @@ class NewExpenseScreen extends React.PureComponent {
       },
       focusing,
     } = this.state;
-    const { isLoading, navigation } = this.props;
-    const expense = navigation.getParam('expense');
+    const { isLoading } = this.props;
     return (
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={Header.HEIGHT + 24} pointerEvents={isLoading ? 'none' : 'auto'}>
         <TouchableWithoutFeedback onPress={this.handleTouchablePress}>
@@ -289,13 +265,6 @@ class NewExpenseScreen extends React.PureComponent {
                 }}
                 rightElement={<Text style={{ fontSize: 17, width: 150 }}>{category.value}</Text>}
               />
-              {expense && <ListItem
-                title="Delete"
-                bottomDivider
-                titleStyle={{ color: theme.palette.red }}
-                chevron
-                onPress={this.handleDeletePress(expense.id)}
-              />}
             </View>
             {focusing === 'shouldPay' &&
               <View style={styles.footer}>
@@ -316,7 +285,6 @@ NewExpenseScreen.propTypes = {
   onUpdateExpense: PropTypes.func.isRequired,
   isLoading: PropTypes.bool.isRequired,
   navigation: PropTypes.object.isRequired,
-  onDeleteExpense: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = (state) => {
@@ -329,7 +297,6 @@ const mapDispatchToProps = (dispatch) => {
   return {
     onCreateExpense: options => dispatch(createExpense(options)),
     onUpdateExpense: options => dispatch(updateExpense(options)),
-    onDeleteExpense: expenseId => dispatch(deleteExpense(expenseId)),
   };
 };
 

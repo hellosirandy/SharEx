@@ -1,7 +1,7 @@
 import React from 'react';
 import { createStackNavigator, createAppContainer, createSwitchNavigator, createBottomTabNavigator } from 'react-navigation';
 import { Icon, Button } from 'react-native-elements';
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import theme from '../theme';
 import AuthScreen from './AuthScreen';
 import InitScreen from './InitScreen';
@@ -14,6 +14,8 @@ import SettingScreen from './SettingScreen';
 import DebtScreen from './DebtScreen';
 import ExpenseScreen from './ExpenseScreen';
 import DebtScreenTitle from '../components/DebtScreenTitle';
+import ExpenseScreenTitle from '../components/ExpenseScreenTitle';
+import HeaderDeleteButton from '../components/HeaderDeleteButton';
 
 const HomeStack = createStackNavigator({
   HomeScreen,
@@ -71,16 +73,34 @@ const DeptStack = createStackNavigator({
           />
         </TouchableOpacity>
       ),
+      headerTitle: <ExpenseScreenTitle expenseId={navigation.state.params.expenseId} />,
       headerRight: (
-        <Button
-          title="Edit"
-          type="clear"
-          buttonStyle={{ padding: 0 }}
-          titleStyle={{ color: theme.palette.primary }}
-          onPress={() => (
-            navigation.navigate('NewExpenseScreen', { expense: navigation.getParam('expense'), index: navigation.getParam('index') })
-          )}
-        />
+        <View style={{ flexDirection: 'row' }}>
+          <HeaderDeleteButton expenseId={navigation.state.params.expenseId} navigation={navigation} />
+          <TouchableOpacity
+            style={{ padding: 8 }}
+            onPress={() => {
+              navigation.navigate('NewExpenseScreen', { expense: navigation.getParam('expense'), index: navigation.getParam('index') });
+            }}
+          >
+            <Icon
+              type="font-awesome"
+              name="pencil"
+              size={25}
+              underlayColor="transparent"
+              color={theme.palette.primary}
+            />
+          </TouchableOpacity>
+          {/* <Button
+            title="Edit"
+            type="clear"
+            buttonStyle={{ padding: 0 }}
+            titleStyle={{ color: theme.palette.primary }}
+            onPress={() => (
+              navigation.navigate('NewExpenseScreen', { expense: navigation.getParam('expense'), index: navigation.getParam('index') })
+            )}
+          /> */}
+        </View>
       ),
       headerRightContainerStyle: {
         paddingRight: 10,
@@ -127,17 +147,17 @@ const NewExpenseStack = createStackNavigator({
   NewExpenseScreen: {
     screen: NewExpenseScreen,
     navigationOptions: ({ navigation }) => ({
-      headerRight: (
+      headerRight: navigation.getParam('onSubmit') ? (
         <Button
           title="Done"
           type="clear"
           buttonStyle={{ padding: 0 }}
           titleStyle={{ color: theme.palette.primary }}
-          onPress={() => (
-            navigation.getParam('onSubmit')()
-          )}
+          onPress={() => {
+            navigation.getParam('onSubmit')();
+          }}
         />
-      ),
+      ) : null,
       headerLeftContainerStyle: {
         paddingLeft: 10,
       },
